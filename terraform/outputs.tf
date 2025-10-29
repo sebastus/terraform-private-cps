@@ -40,19 +40,20 @@ output "network_security_groups" {
   value       = module.networking.network_security_group_ids
 }
 
-output "bastion_public_ip" {
-  description = "Public IP address of the Azure Bastion"
-  value       = module.networking.bastion_public_ip
+# VNet Peering outputs
+output "vnet_peering_status" {
+  description = "Status and details of VNet peering with vnet-tf-private-box-vkvhvw"
+  value       = module.networking.vnet_peering_status
 }
 
-output "bastion_host_name" {
-  description = "Name of the Azure Bastion host"
-  value       = module.networking.bastion_host_name
+output "vnet_peering_local_to_remote_id" {
+  description = "ID of the VNet peering from local VNet to vnet-tf-private-box-vkvhvw"
+  value       = module.networking.vnet_peering_local_to_remote_id
 }
 
-output "bastion_host_dns_name" {
-  description = "DNS name of the Azure Bastion host"
-  value       = module.networking.bastion_host_dns_name
+output "vnet_peering_remote_to_local_id" {
+  description = "ID of the VNet peering from vnet-tf-private-box-vkvhvw to local VNet"
+  value       = module.networking.vnet_peering_remote_to_local_id
 }
 
 # Key Vault outputs
@@ -74,4 +75,51 @@ output "key_vault_uri" {
 output "key_vault_access_url" {
   description = "URL to access the Key Vault in Azure Portal"
   value       = module.keyvault.key_vault_access_url
+}
+
+output "key_vault_private_endpoint_id" {
+  description = "ID of the Key Vault private endpoint"
+  value       = module.keyvault.private_endpoint_id
+}
+
+output "key_vault_private_endpoint_ip" {
+  description = "Private IP address of the Key Vault private endpoint"
+  value       = module.keyvault.private_endpoint_ip_address
+}
+
+output "key_vault_private_endpoint_network_interface" {
+  description = "Network interface ID of the Key Vault private endpoint"
+  value       = module.keyvault.private_endpoint_network_interface_id
+}
+
+# Registry Customer Managed Key outputs
+output "registry_customer_managed_key_id" {
+  description = "ID of the registry customer-managed encryption key"
+  value       = module.keyvault.registry_customer_managed_key_id
+}
+
+output "registry_customer_managed_key_version_less_id" {
+  description = "Version-less ID of the registry customer-managed encryption key (for container registry encryption)"
+  value       = module.keyvault.registry_customer_managed_key_version_less_id
+}
+
+output "storage_customer_managed_key_id" {
+  description = "ID of the storage customer-managed encryption key"
+  value       = module.keyvault.storage_customer_managed_key_id
+}
+
+output "storage_customer_managed_key_version_less_id" {
+  description = "Version-less ID of the storage customer-managed encryption key"
+  value       = module.keyvault.storage_customer_managed_key_version_less_id
+}
+
+# User Assigned Managed Identity outputs
+output "user_assigned_identity_id" {
+  description = "ID of the user-assigned managed identity for Key Vault access"
+  value       = module.identity.user_assigned_identity_id
+}
+
+output "user_assigned_identity_principal_id" {
+  description = "Principal ID of the user-assigned managed identity"
+  value       = module.identity.user_assigned_identity_principal_id
 }

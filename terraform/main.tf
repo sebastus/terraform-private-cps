@@ -21,18 +21,14 @@ module "networking" {
   environment  = var.environment
   project_name = var.project_name
 
-  # Optional variables with defaults
-  vnet_address_space = ["10.0.0.0/18"]
-  
-  subnet_address_prefixes = {
-    subnet1 = ["10.0.0.0/27"]
-    subnet2 = ["10.0.0.32/27"]
-    subnet3 = ["10.0.0.64/27"]
-    subnet4 = ["10.0.0.96/27"]
-    bastion = ["10.0.0.128/27"]
-  }
+  # Networking configuration using variables
+  vnet_address_space      = var.vnet_address_space
+  subnet_address_prefixes = var.subnet_address_prefixes
 
-  enable_bastion = true
+  # VNet Peering configuration
+  enable_vnet_peering = var.enable_vnet_peering
+  remote_vnet_id      = var.remote_vnet_id
+  remote_vnet_name    = "vnet-tf-private-box-vkvhvw"
 
   # Apply common tags
   tags = local.common_tags
@@ -55,8 +51,8 @@ module "privatedns" {
   # Link to our VNet
   virtual_network_links = [
     {
-      name               = "vnet-link-main"
-      virtual_network_id = module.networking.vnet_id
+      name                 = "vnet-link-main"
+      virtual_network_id   = module.networking.vnet_id
       registration_enabled = false
     }
   ]
@@ -70,10 +66,10 @@ module "keyvault" {
   source = "./modules/keyvault"
 
   # Required variables
-  location            = var.location
-  resource_group_name = module.networking.resource_group_name
-  environment         = var.environment
-  project_name        = var.project_name
+  location             = var.location
+  resource_group_name  = module.networking.resource_group_name
+  environment          = var.environment
+  project_name         = var.project_name
   admin_user_object_id = var.admin_user_object_id
 
   # Optional variables with security-focused defaults
@@ -83,7 +79,7 @@ module "keyvault" {
   enabled_for_template_deployment = true
   purge_protection_enabled        = true
   soft_delete_retention_days      = 7
-  
+
   # Network access restrictions (deny by default for security)
   network_access_default_action = "Deny"
   allowed_subnet_ids = [
@@ -92,6 +88,29 @@ module "keyvault" {
     module.networking.subnet_ids.subnet3,
     module.networking.subnet_ids.subnet4
   ]
+  
+  # Allow Terraform client IP access to Key Vault
+  allowed_ip_ranges = var.terraform_client_ip != "" ? [var.terraform_client_ip] : []
+
+  # Private Endpoint configuration
+  enable_private_endpoint = true
+  subnet_id              = module.networking.subnet_ids.subnet1
+  private_dns_zone_id    = module.privatedns.key_vault_zone_id
+
+  # Apply common tags
+  tags = local.common_tags
+}
+
+# Identity Module
+module "identity" {
+  source = "./modules/identity"
+
+  # Required variables
+  location            = var.location
+  resource_group_name = module.networking.resource_group_name
+  environment         = var.environment
+  project_name        = var.project_name
+  key_vault_id        = module.keyvault.key_vault_id
 
   # Apply common tags
   tags = local.common_tags
@@ -102,31 +121,31 @@ module "storage" {
   source = "./modules/storage"
 
   # Required variables
-  location            = var.location
-  resource_group_name = module.networking.resource_group_name
-  environment         = var.environment
-  project_name        = var.project_name
+  location             = var.location
+  resource_group_name  = module.networking.resource_group_name
+  environment          = var.environment
+  project_name         = var.project_name
   admin_user_object_id = var.admin_user_object_id
 
   # Network configuration - place in subnet1 with private endpoint
   subnet_id = module.networking.subnet_ids.subnet1
-  
+
   # Private DNS zones from privatedns module
   private_dns_zone_ids = {
     blob = module.privatedns.blob_zone_id
     file = module.privatedns.file_zone_id
   }
-  
+
   # Storage account configuration
-  account_tier              = "Standard"
-  account_replication_type  = "LRS"
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
   access_tier              = "Hot"
-  
+
   # Security settings
   enable_https_traffic_only     = true
-  min_tls_version              = "TLS1_2"
+  min_tls_version               = "TLS1_2"
   public_network_access_enabled = var.storage_public_access_enabled
-  
+
   # Network access rules (when public access is enabled)
   network_rules_default_action = "Deny"
   allowed_subnet_ids = [
@@ -135,14 +154,22 @@ module "storage" {
     module.networking.subnet_ids.subnet3,
     module.networking.subnet_ids.subnet4
   ]
-  allowed_ip_ranges = var.storage_allowed_ip_ranges
-  
+  # Combine storage allowed IPs with Terraform client IP
+  allowed_ip_ranges = var.terraform_client_ip != "" ? concat(var.storage_allowed_ip_ranges, [var.terraform_client_ip]) : var.storage_allowed_ip_ranges
+
   # Data protection settings
-  enable_versioning                   = true
-  enable_change_feed                 = false
-  delete_retention_days              = 30
-  container_delete_retention_days    = 7
-  share_retention_days               = 30
+  enable_versioning               = true
+  enable_change_feed              = false
+  delete_retention_days           = 30
+  container_delete_retention_days = 7
+  share_retention_days            = 30
+
+  # Customer-managed encryption configuration
+  enable_customer_managed_key = true
+  customer_managed_key_id     = module.keyvault.storage_customer_managed_key_version_less_id
+  key_vault_id               = module.keyvault.key_vault_id
+  user_assigned_identity_id   = module.identity.user_assigned_identity_id
+  keyvault_role_assignment    = module.identity.keyvault_crypto_user_role_assignment
 
   # Apply common tags
   tags = local.common_tags

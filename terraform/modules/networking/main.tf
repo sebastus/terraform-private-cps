@@ -1,5 +1,5 @@
 # Azure Virtual Network and Subnet Configuration Module
-# This module creates a VNet with customizable subnets and optional Azure Bastion
+# This module creates a VNet with customizable subnets
 
 # Data source to get current Azure client configuration
 data "azurerm_client_config" "current" {}
@@ -65,7 +65,8 @@ resource "azurerm_subnet" "subnet1" {
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
-    "Microsoft.KeyVault"
+    "Microsoft.KeyVault",
+    "Microsoft.Storage"
   ]
 
   private_endpoint_network_policies = "Disabled"
@@ -80,7 +81,8 @@ resource "azurerm_subnet" "subnet2" {
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
-    "Microsoft.KeyVault"
+    "Microsoft.KeyVault",
+    "Microsoft.Storage"
   ]
 
   private_endpoint_network_policies = "Disabled"
@@ -95,7 +97,8 @@ resource "azurerm_subnet" "subnet3" {
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
-    "Microsoft.KeyVault"
+    "Microsoft.KeyVault",
+    "Microsoft.Storage"
   ]
 
   private_endpoint_network_policies = "Disabled"
@@ -110,20 +113,9 @@ resource "azurerm_subnet" "subnet4" {
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
-    "Microsoft.KeyVault"
+    "Microsoft.KeyVault",
+    "Microsoft.Storage"
   ]
-
-  private_endpoint_network_policies = "Disabled"
-}
-
-# Azure Bastion Subnet (conditional)
-resource "azurerm_subnet" "bastion" {
-  count = var.enable_bastion ? 1 : 0
-  
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = azurerm_resource_group.networking.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = var.subnet_address_prefixes.bastion
 
   private_endpoint_network_policies = "Disabled"
 }
@@ -189,45 +181,40 @@ resource "azurerm_subnet_network_security_group_association" "subnet_nsg_associa
   network_security_group_id = azurerm_network_security_group.subnet_nsg[each.key].id
 }
 
-# Public IP for Azure Bastion (conditional)
-resource "azurerm_public_ip" "bastion" {
-  count = var.enable_bastion ? 1 : 0
-  
-  name                = "pip-bastion-${local.resource_suffix}"
-  location            = azurerm_resource_group.networking.location
-  resource_group_name = azurerm_resource_group.networking.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-
-  tags = merge(local.common_tags, {
-    Purpose = "bastion-public-ip"
-  })
-  
-  lifecycle {
-    ignore_changes = [tags]
-  }
+# VNet Peering Configuration
+# Data source to get remote VNet information
+data "azurerm_virtual_network" "remote" {
+  count               = var.enable_vnet_peering ? 1 : 0
+  name                = var.remote_vnet_name
+  resource_group_name = split("/", var.remote_vnet_id)[4]  # Extract resource group from resource ID
 }
 
-# Azure Bastion Host (conditional)
-resource "azurerm_bastion_host" "main" {
-  count = var.enable_bastion ? 1 : 0
+# VNet Peering from local VNet to remote VNet
+resource "azurerm_virtual_network_peering" "local_to_remote" {
+  count                        = var.enable_vnet_peering ? 1 : 0
+  name                         = "peer-${azurerm_virtual_network.main.name}-to-${var.remote_vnet_name}"
+  resource_group_name          = azurerm_resource_group.networking.name
+  virtual_network_name         = azurerm_virtual_network.main.name
+  remote_virtual_network_id    = var.remote_vnet_id
   
-  name                = "bas-${var.project_name}-${local.resource_suffix}"
-  location            = azurerm_resource_group.networking.location
-  resource_group_name = azurerm_resource_group.networking.name
-  sku                 = "Basic"
+  # Peering settings
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
 
-  ip_configuration {
-    name                 = "bastion-ip-config"
-    subnet_id            = azurerm_subnet.bastion[0].id
-    public_ip_address_id = azurerm_public_ip.bastion[0].id
-  }
-
-  tags = merge(local.common_tags, {
-    Purpose = "secure-remote-access"
-  })
+# VNet Peering from remote VNet to local VNet (reciprocal peering)
+resource "azurerm_virtual_network_peering" "remote_to_local" {
+  count                        = var.enable_vnet_peering ? 1 : 0
+  name                         = "peer-${var.remote_vnet_name}-to-${azurerm_virtual_network.main.name}"
+  resource_group_name          = data.azurerm_virtual_network.remote[0].resource_group_name
+  virtual_network_name         = var.remote_vnet_name
+  remote_virtual_network_id    = azurerm_virtual_network.main.id
   
-  lifecycle {
-    ignore_changes = [tags]
-  }
+  # Peering settings
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
 }

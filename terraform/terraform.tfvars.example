@@ -18,8 +18,16 @@ admin_user_object_id = "REPLACE_WITH_YOUR_OBJECT_ID"
 #   subnet2 = ["10.0.0.32/27"]
 #   subnet3 = ["10.0.0.64/27"]
 #   subnet4 = ["10.0.0.96/27"]
-#   bastion = ["10.0.0.128/27"]
 # }
+
+# VNet Peering Configuration
+# Enable peering with the existing vnet-tf-private-box-vkvhvw VNet (10.0.0.0/18)
+# enable_vnet_peering = true
+# remote_vnet_id = "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.Network/virtualNetworks/vnet-tf-private-box-vkvhvw"
+
+# Terraform Client IP Configuration
+# IP address that needs access to storage and key vault firewalls
+# terraform_client_ip = "YOUR_CLIENT_IP_ADDRESS"
 
 # Key Vault Configuration (using defaults from module, but can be overridden)
 # keyvault_sku_name = "standard"

@@ -105,3 +105,84 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# Private Endpoint Configuration
+variable "subnet_id" {
+  description = "ID of the subnet where the private endpoint will be created"
+  type        = string
+  default     = ""
+}
+
+variable "private_dns_zone_id" {
+  description = "Private DNS zone ID for Key Vault (provided by privatedns module)"
+  type        = string
+  default     = ""
+}
+
+variable "enable_private_endpoint" {
+  description = "Whether to create a private endpoint for the Key Vault"
+  type        = bool
+  default     = true
+}
+
+# Registry Customer Managed Key Configuration
+variable "create_customer_managed_key" {
+  description = "Whether to create a registry customer-managed encryption key in the Key Vault"
+  type        = bool
+  default     = true
+}
+
+variable "cmk_key_name" {
+  description = "Name of the registry customer-managed encryption key"
+  type        = string
+  default     = "cmk-registry-key"
+}
+
+variable "cmk_key_type" {
+  description = "Type of the customer-managed key (RSA or EC)"
+  type        = string
+  default     = "RSA"
+  
+  validation {
+    condition     = contains(["RSA", "EC"], var.cmk_key_type)
+    error_message = "Key type must be either 'RSA' or 'EC'."
+  }
+}
+
+variable "cmk_key_size" {
+  description = "Size of the registry customer-managed key (2048, 3072, or 4096 for RSA; 256, 384, or 521 for EC)"
+  type        = number
+  default     = 2048
+  
+  validation {
+    condition = contains([2048, 3072, 4096, 256, 384, 521], var.cmk_key_size)
+    error_message = "Key size must be 2048, 3072, or 4096 for RSA keys, or 256, 384, or 521 for EC keys."
+  }
+}
+
+variable "cmk_key_opts" {
+  description = "List of key operations allowed for the registry customer-managed key"
+  type        = list(string)
+  default     = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
+  
+  validation {
+    condition = alltrue([
+      for opt in var.cmk_key_opts :
+      contains(["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"], opt)
+    ])
+    error_message = "Key operations must be from: decrypt, encrypt, sign, unwrapKey, verify, wrapKey."
+  }
+}
+
+# Storage Customer Managed Key Configuration
+variable "create_storage_cmk" {
+  description = "Whether to create a customer-managed encryption key specifically for storage"
+  type        = bool
+  default     = true
+}
+
+variable "storage_cmk_key_name" {
+  description = "Name of the storage customer-managed encryption key"
+  type        = string
+  default     = "cmk-storage-key"
+}

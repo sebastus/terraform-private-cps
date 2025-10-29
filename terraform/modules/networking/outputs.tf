@@ -37,7 +37,6 @@ output "subnet_ids" {
     subnet2 = azurerm_subnet.subnet2.id
     subnet3 = azurerm_subnet.subnet3.id
     subnet4 = azurerm_subnet.subnet4.id
-    bastion = var.enable_bastion ? azurerm_subnet.bastion[0].id : null
   }
 }
 
@@ -48,7 +47,6 @@ output "subnet_address_prefixes" {
     subnet2 = azurerm_subnet.subnet2.address_prefixes
     subnet3 = azurerm_subnet.subnet3.address_prefixes
     subnet4 = azurerm_subnet.subnet4.address_prefixes
-    bastion = var.enable_bastion ? azurerm_subnet.bastion[0].address_prefixes : null
   }
 }
 
@@ -62,22 +60,23 @@ output "network_security_group_ids" {
   }
 }
 
-output "bastion_public_ip" {
-  description = "Public IP address of the Azure Bastion"
-  value       = var.enable_bastion ? azurerm_public_ip.bastion[0].ip_address : null
+# VNet Peering outputs
+output "vnet_peering_local_to_remote_id" {
+  description = "ID of the VNet peering from local to remote VNet"
+  value       = var.enable_vnet_peering ? azurerm_virtual_network_peering.local_to_remote[0].id : null
 }
 
-output "bastion_host_name" {
-  description = "Name of the Azure Bastion host"
-  value       = var.enable_bastion ? azurerm_bastion_host.main[0].name : null
+output "vnet_peering_remote_to_local_id" {
+  description = "ID of the VNet peering from remote to local VNet"
+  value       = var.enable_vnet_peering ? azurerm_virtual_network_peering.remote_to_local[0].id : null
 }
 
-output "bastion_host_dns_name" {
-  description = "DNS name of the Azure Bastion host"
-  value       = var.enable_bastion ? azurerm_bastion_host.main[0].dns_name : null
-}
-
-output "bastion_host_id" {
-  description = "ID of the Azure Bastion host"
-  value       = var.enable_bastion ? azurerm_bastion_host.main[0].id : null
+output "vnet_peering_status" {
+  description = "Status of VNet peering"
+  value = {
+    enabled                    = var.enable_vnet_peering
+    local_to_remote_id         = var.enable_vnet_peering ? azurerm_virtual_network_peering.local_to_remote[0].id : null
+    remote_to_local_id         = var.enable_vnet_peering ? azurerm_virtual_network_peering.remote_to_local[0].id : null
+    remote_vnet_name          = var.remote_vnet_name
+  }
 }

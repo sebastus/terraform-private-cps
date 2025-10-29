@@ -89,6 +89,87 @@ resource "azurerm_role_assignment" "admin_crypto_officer" {
   principal_id         = var.admin_user_object_id
 }
 
+# Private Endpoint for Key Vault
+resource "azurerm_private_endpoint" "keyvault" {
+  count               = var.enable_private_endpoint ? 1 : 0
+  name                = "pe-${local.keyvault_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.subnet_id
+
+  private_service_connection {
+    name                           = "psc-${local.keyvault_name}"
+    private_connection_resource_id = azurerm_key_vault.main.id
+    is_manual_connection           = false
+    subresource_names              = ["vault"]
+  }
+
+  private_dns_zone_group {
+    name                 = "pdz-group-keyvault"
+    private_dns_zone_ids = [var.private_dns_zone_id]
+  }
+
+  tags = local.common_tags
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+# Moved blocks to handle resource renaming
+moved {
+  from = azurerm_key_vault_key.customer_managed_key
+  to   = azurerm_key_vault_key.registry_customer_managed_key
+}
+
+# Registry Customer Managed Encryption Key
+resource "azurerm_key_vault_key" "registry_customer_managed_key" {
+  count        = var.create_customer_managed_key ? 1 : 0
+  name         = var.cmk_key_name
+  key_vault_id = azurerm_key_vault.main.id
+  key_type     = var.cmk_key_type
+  key_size     = var.cmk_key_size
+  key_opts     = var.cmk_key_opts
+
+  # Ensure the key depends on the RBAC role assignments
+  depends_on = [
+    azurerm_role_assignment.admin_keyvault_administrator,
+    azurerm_role_assignment.admin_crypto_officer
+  ]
+
+  tags = merge(local.common_tags, {
+    Purpose = "registry-encryption"
+  })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+# Storage Customer Managed Encryption Key
+resource "azurerm_key_vault_key" "storage_customer_managed_key" {
+  count        = var.create_storage_cmk ? 1 : 0
+  name         = var.storage_cmk_key_name
+  key_vault_id = azurerm_key_vault.main.id
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["decrypt", "encrypt", "unwrapKey", "wrapKey"]
+
+  # Ensure the key depends on the RBAC role assignments
+  depends_on = [
+    azurerm_role_assignment.admin_keyvault_administrator,
+    azurerm_role_assignment.admin_crypto_officer
+  ]
+
+  tags = merge(local.common_tags, {
+    Purpose = "storage-encryption"
+  })
+  
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
 # Optional: Diagnostic settings for monitoring (requires Log Analytics workspace)
 # Uncomment and configure if you have a Log Analytics workspace
 # resource "azurerm_monitor_diagnostic_setting" "keyvault" {

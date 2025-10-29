@@ -6,7 +6,7 @@ data "azurerm_client_config" "current" {}
 
 # Random string for unique resource naming
 resource "random_string" "storage_suffix" {
-  length  = 8
+  length  = 6
   special = false
   upper   = false
   numeric = true
@@ -25,7 +25,20 @@ locals {
   })
   
   # Storage account name must be globally unique and follow naming restrictions
-  storage_account_name = "${var.project_name}${var.environment}${random_string.storage_suffix.result}"
+  # Rules: lowercase letters and numbers only, 3-24 characters
+  # Remove hyphens and ensure total length doesn't exceed 24 characters
+  base_name = replace(var.project_name, "-", "")
+  storage_account_name = substr("${local.base_name}${var.environment}${random_string.storage_suffix.result}", 0, 24)
+}
+
+# Validation for storage account name compliance
+resource "null_resource" "storage_name_validation" {
+  lifecycle {
+    precondition {
+      condition = can(regex("^[a-z0-9]{3,24}$", local.storage_account_name))
+      error_message = "Storage account name '${local.storage_account_name}' must be 3-24 characters long and contain only lowercase letters and numbers."
+    }
+  }
 }
 
 # Azure Storage Account (StorageV2)
@@ -45,8 +58,9 @@ resource "azurerm_storage_account" "main" {
   min_tls_version            = var.min_tls_version
   
   # Network access settings
-  public_network_access_enabled = var.public_network_access_enabled
-  
+  public_network_access_enabled    = var.public_network_access_enabled
+  allow_nested_items_to_be_public  = false
+
   # Enable RBAC for storage access
   shared_access_key_enabled = false
   
@@ -81,12 +95,33 @@ resource "azurerm_storage_account" "main" {
       days = var.share_retention_days
     }
   }
+  
+  # User-assigned managed identity for customer-managed encryption
+  dynamic "identity" {
+    for_each = var.enable_customer_managed_key ? [1] : []
+    content {
+      type         = "UserAssigned"
+      identity_ids = [var.user_assigned_identity_id]
+    }
+  }
+  
+  # Customer-managed encryption configuration
+  dynamic "customer_managed_key" {
+    for_each = var.enable_customer_managed_key ? [1] : []
+    content {
+      key_vault_key_id          = var.customer_managed_key_id
+      user_assigned_identity_id = var.user_assigned_identity_id
+    }
+  }
 
   tags = local.common_tags
   
   lifecycle {
     ignore_changes = [tags]
   }
+  
+  # Ensure the Key Vault role assignment is completed before creating storage with CME
+  depends_on = [var.keyvault_role_assignment]
 }
 
 # Private Endpoints for storage services

@@ -173,3 +173,34 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# Customer Managed Encryption Configuration
+variable "enable_customer_managed_key" {
+  description = "Whether to enable customer-managed encryption for the storage account"
+  type        = bool
+  default     = false
+}
+
+variable "customer_managed_key_id" {
+  description = "The version-less ID of the customer-managed key from Key Vault"
+  type        = string
+  default     = ""
+}
+
+variable "key_vault_id" {
+  description = "The ID of the Key Vault containing the customer-managed key"
+  type        = string
+  default     = ""
+}
+
+variable "user_assigned_identity_id" {
+  description = "The ID of the user-assigned managed identity for accessing the Key Vault"
+  type        = string
+  default     = ""
+}
+
+variable "keyvault_role_assignment" {
+  description = "The Key Vault role assignment resource to ensure proper dependencies"
+  type        = any
+  default     = null
+}
