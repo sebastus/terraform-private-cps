@@ -1,0 +1,50 @@
+# Terraform Variables File
+# This file contains input values for the Terraform configuration
+# Copy this file to terraform.tfvars and customize the values as needed
+
+# Basic Configuration
+location     = "UK South"
+environment  = "dev"
+project_name = "cps-private"
+
+# Admin User Configuration
+# Get your Object ID with: az ad signed-in-user show --query id -o tsv
+admin_user_object_id = "REPLACE_WITH_YOUR_OBJECT_ID"
+
+# Networking Configuration (using defaults from modules, but can be overridden)
+# vnet_address_space = ["10.0.0.0/18"]
+# subnet_address_prefixes = {
+#   subnet1 = ["10.0.0.0/27"]
+#   subnet2 = ["10.0.0.32/27"]
+#   subnet3 = ["10.0.0.64/27"]
+#   subnet4 = ["10.0.0.96/27"]
+#   bastion = ["10.0.0.128/27"]
+# }
+
+# Key Vault Configuration (using defaults from module, but can be overridden)
+# keyvault_sku_name = "standard"
+# keyvault_purge_protection_enabled = true
+# keyvault_soft_delete_retention_days = 7
+# keyvault_network_access_default_action = "Deny"
+
+# Additional IP ranges to allow access to Key Vault (optional)
+# keyvault_allowed_ip_ranges = ["1.2.3.4/32", "5.6.7.0/24"]
+
+# Storage Account Configuration
+# Whether to enable public network access to the storage account (can be switched)
+storage_public_access_enabled = true
+
+# IP ranges allowed to access the storage account when public access is enabled
+# storage_allowed_ip_ranges = ["1.2.3.4/32", "5.6.7.0/24"]
+
+# Private DNS Configuration
+# The privatedns module automatically creates private DNS zones for enabled services.
+# Currently enabled zones: blob, file, key_vault
+# Additional zones can be enabled by modifying the main.tf enable_zones configuration:
+# - Database services: sql_server, mysql, postgres, redis, cosmos_*
+# - Container services: container_registry
+# - App services: app_service
+# - AI/ML services: cognitive_services, openai
+# - Event services: event_hub, service_bus, event_grid
+# - Monitoring: monitor, log_analytics
+# - Other: search, signalr, iot_hub, media_services, backup, automation
