@@ -42,17 +42,17 @@ output "network_security_groups" {
 
 # VNet Peering outputs
 output "vnet_peering_status" {
-  description = "Status and details of VNet peering with vnet-tf-private-box-vkvhvw"
+  description = "Status and details of VNet peering with vnet-tf-private-box-frpvpl"
   value       = module.networking.vnet_peering_status
 }
 
 output "vnet_peering_local_to_remote_id" {
-  description = "ID of the VNet peering from local VNet to vnet-tf-private-box-vkvhvw"
+  description = "ID of the VNet peering from local VNet to vnet-tf-private-box-frpvpl"
   value       = module.networking.vnet_peering_local_to_remote_id
 }
 
 output "vnet_peering_remote_to_local_id" {
-  description = "ID of the VNet peering from vnet-tf-private-box-vkvhvw to local VNet"
+  description = "ID of the VNet peering from vnet-tf-private-box-frpvpl to local VNet"
   value       = module.networking.vnet_peering_remote_to_local_id
 }
 

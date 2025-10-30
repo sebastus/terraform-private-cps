@@ -28,7 +28,7 @@ module "networking" {
   # VNet Peering configuration
   enable_vnet_peering = var.enable_vnet_peering
   remote_vnet_id      = var.remote_vnet_id
-  remote_vnet_name    = "vnet-tf-private-box-vkvhvw"
+  remote_vnet_name    = "vnet-tf-private-box-frpvpl"
 
   # Apply common tags
   tags = local.common_tags
