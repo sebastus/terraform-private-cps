@@ -23,19 +23,14 @@ variable "vnet_address_space" {
 }
 
 variable "subnet_address_prefixes" {
-  description = "Address prefixes for the four subnets"
+  description = "Address prefixes for the four subnets (optional - will be computed automatically if not provided)"
   type = object({
     subnet1 = list(string)
     subnet2 = list(string)
     subnet3 = list(string)
     subnet4 = list(string)
   })
-  default = {
-    subnet1 = ["10.0.0.0/27"]
-    subnet2 = ["10.0.0.32/27"]
-    subnet3 = ["10.0.0.64/27"]
-    subnet4 = ["10.0.0.96/27"]
-  }
+  default = null
 }
 
 variable "tags" {

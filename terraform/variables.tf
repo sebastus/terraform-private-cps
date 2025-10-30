@@ -117,13 +117,13 @@ variable "storage_allowed_ip_ranges" {
 
 # VNet Peering configuration variables
 variable "enable_vnet_peering" {
-  description = "Whether to enable VNet peering with the remote VNet (vnet-tf-private-box-vkvhvw)"
+  description = "Whether to enable VNet peering with the remote VNet (vnet-tf-private-box-frpvpl)"
   type        = bool
   default     = false
 }
 
 variable "remote_vnet_id" {
-  description = "Resource ID of the remote VNet (vnet-tf-private-box-vkvhvw) to peer with"
+  description = "Resource ID of the remote VNet (vnet-tf-private-box-frpvpl) to peer with"
   type        = string
   default     = ""
 

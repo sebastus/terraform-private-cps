@@ -23,6 +23,18 @@ locals {
   })
   
   resource_suffix = random_string.suffix.result
+  
+  # Compute subnet address prefixes automatically from VNet address space
+  # Assumes VNet is at least /18 and creates /27 subnets (32 hosts each)
+  computed_subnet_prefixes = {
+    subnet1 = [cidrsubnet(var.vnet_address_space[0], 9, 0)]  # First /27 subnet
+    subnet2 = [cidrsubnet(var.vnet_address_space[0], 9, 1)]  # Second /27 subnet
+    subnet3 = [cidrsubnet(var.vnet_address_space[0], 9, 2)]  # Third /27 subnet
+    subnet4 = [cidrsubnet(var.vnet_address_space[0], 9, 3)]  # Fourth /27 subnet
+  }
+  
+  # Use provided subnet prefixes if specified, otherwise use computed ones
+  subnet_prefixes = var.subnet_address_prefixes != null ? var.subnet_address_prefixes : local.computed_subnet_prefixes
 }
 
 # Resource Group for networking resources
@@ -61,7 +73,7 @@ resource "azurerm_subnet" "subnet1" {
   name                 = "subnet1"
   resource_group_name  = azurerm_resource_group.networking.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = var.subnet_address_prefixes.subnet1
+  address_prefixes     = local.subnet_prefixes.subnet1
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
@@ -77,7 +89,7 @@ resource "azurerm_subnet" "subnet2" {
   name                 = "subnet2"
   resource_group_name  = azurerm_resource_group.networking.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = var.subnet_address_prefixes.subnet2
+  address_prefixes     = local.subnet_prefixes.subnet2
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
@@ -93,7 +105,7 @@ resource "azurerm_subnet" "subnet3" {
   name                 = "subnet3"
   resource_group_name  = azurerm_resource_group.networking.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = var.subnet_address_prefixes.subnet3
+  address_prefixes     = local.subnet_prefixes.subnet3
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
@@ -109,7 +121,7 @@ resource "azurerm_subnet" "subnet4" {
   name                 = "subnet4"
   resource_group_name  = azurerm_resource_group.networking.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = var.subnet_address_prefixes.subnet4
+  address_prefixes     = local.subnet_prefixes.subnet4
 
   # Service endpoints for secure access to Azure services
   service_endpoints = [
