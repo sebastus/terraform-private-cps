@@ -54,6 +54,21 @@ module "privatedns" {
       name                 = "vnet-link-main"
       virtual_network_id   = module.networking.vnet_id
       registration_enabled = false
+    },
+    {
+      name               = "linkToTFPrivateBox"
+      virtual_network_id = "/subscriptions/e9562a9b-8aa6-4733-9926-1c778880511b/resourceGroups/rg-tf-private-box-frpvpl/providers/Microsoft.Network/virtualNetworks/vnet-tf-private-box-frpvpl"
+      registration_enabled = false
+    },
+    {
+      name               = "linkToEastUS"
+      virtual_network_id = "/subscriptions/e9562a9b-8aa6-4733-9926-1c778880511b/resourceGroups/rg-copilotstudio/providers/Microsoft.Network/virtualNetworks/vnetEastUS"
+      registration_enabled = false
+    },
+    {
+      name               = "linkToWestUS"
+      virtual_network_id = "/subscriptions/e9562a9b-8aa6-4733-9926-1c778880511b/resourceGroups/rg-copilotstudio/providers/Microsoft.Network/virtualNetworks/vnetWestUS"
+      registration_enabled = false
     }
   ]
 
